@@ -285,3 +285,4 @@ MonoBehaviour:
   travelSpeed: 8
   damage: 1
   projectileRigidbody: {fileID: 136034775255437735}
+  hitParticles: {fileID: 6526012395307840735, guid: ca55d0903509fcd4e81b93d17857610e, type: 3}

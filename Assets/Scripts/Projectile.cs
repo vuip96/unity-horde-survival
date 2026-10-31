@@ -10,32 +10,48 @@ public class Projectile : MonoBehaviour
     [Header("Components")]
     [SerializeField] private Rigidbody2D projectileRigidbody;
 
-    // Initialize projectile movement after spawning
+    [Header("Hit Effects")]
+    [SerializeField] private ParticleSystem hitParticles;
+
+    // Initialize projectile movement
     public void InitializeProjectile(Vector2 direction)
     {
         Launch(direction);
     }
 
-    // Launch the projectile in the given direction
+    // Launch the projectile towards the target
     private void Launch(Vector2 direction)
     {
         projectileRigidbody.linearVelocity =
             direction.normalized * travelSpeed;
     }
 
-    // Detect collisions with other 2D colliders
+    // Detect collisions with terrain
     private void OnTriggerEnter2D(Collider2D other)
     {
-        // Destroy the projectile when it hits terrain
         if (other.CompareTag("Terrain"))
         {
             DestroyProjectile();
         }
     }
 
-    // Remove the projectile from the scene
+    // Create the hit effect and destroy the projectile
     private void DestroyProjectile()
     {
+        // Spawn particles at the projectile's position
+        if (hitParticles != null)
+        {
+            ParticleSystem particles = Instantiate(
+                hitParticles,
+                transform.position,
+                Quaternion.identity
+            );
+
+            // Remove the particles after the effect finishes
+            Destroy(particles.gameObject, 1.5f);
+        }
+
+        // Remove the projectile
         Destroy(gameObject);
     }
 }
