@@ -13,6 +13,11 @@ public class Projectile : MonoBehaviour
     [Header("Hit Effects")]
     [SerializeField] private ParticleSystem hitParticles;
 
+    [Header("Audio")]
+    [SerializeField] private AudioClip enemyHitSound;
+
+    private bool isDestroyed;
+
     // Initialize projectile movement
     public void InitializeProjectile(Vector2 direction)
     {
@@ -26,19 +31,56 @@ public class Projectile : MonoBehaviour
             direction.normalized * travelSpeed;
     }
 
-    // Detect collisions with terrain
+    // Detect collisions with enemies and terrain
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (other.CompareTag("Terrain"))
+        if (isDestroyed)
+            return;
+
+        // Damage enemies
+        if (other.CompareTag("Enemy"))
+        {
+            DealDamage(other.gameObject);
+            DestroyProjectile();
+        }
+        // Destroy the projectile when hitting a wall
+        else if (other.CompareTag("Terrain"))
         {
             DestroyProjectile();
         }
     }
 
-    // Create the hit effect and destroy the projectile
+    // Apply damage to an entity with health
+    private void DealDamage(GameObject target)
+    {
+        if (target.TryGetComponent<EntityHealth>(
+            out EntityHealth health))
+        {
+            health.LoseHealth(damage);
+
+            // Play the enemy hit sound
+            if (enemyHitSound != null &&
+                AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayAudio(
+                    enemyHitSound,
+                    SoundType.SFX,
+                    0.5f,
+                    false
+                );
+            }
+        }
+    }
+
+    // Spawn hit particles and remove the projectile
     private void DestroyProjectile()
     {
-        // Spawn particles at the projectile's position
+        if (isDestroyed)
+            return;
+
+        isDestroyed = true;
+
+        // Spawn the hit particle effect
         if (hitParticles != null)
         {
             ParticleSystem particles = Instantiate(
@@ -47,11 +89,9 @@ public class Projectile : MonoBehaviour
                 Quaternion.identity
             );
 
-            // Remove the particles after the effect finishes
             Destroy(particles.gameObject, 1.5f);
         }
 
-        // Remove the projectile
         Destroy(gameObject);
     }
 }

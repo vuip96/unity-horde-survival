@@ -286,3 +286,4 @@ MonoBehaviour:
   damage: 1
   projectileRigidbody: {fileID: 136034775255437735}
   hitParticles: {fileID: 6526012395307840735, guid: ca55d0903509fcd4e81b93d17857610e, type: 3}
+  enemyHitSound: {fileID: 8300000, guid: 9a3163b91ff9e7b45a7376065fbf30af, type: 3}
