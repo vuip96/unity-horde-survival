@@ -19,7 +19,6 @@ public class AudioManager : MonoBehaviour
     [Header("Background Music")]
     [SerializeField] private AudioClip backgroundMusic;
 
-    // Audio mixer groups
     private AudioMixerGroup musicGroup;
     private AudioMixerGroup sfxGroup;
 
@@ -27,14 +26,19 @@ public class AudioManager : MonoBehaviour
     private const string MUSIC_GROUP = "Music";
     private const string SFX_GROUP = "SFX";
 
-    // Exposed volume parameter names
+    // Exposed Audio Mixer parameters
     private const string MASTER_VOLUME = "Master";
     private const string MUSIC_VOLUME = "Music";
     private const string SFX_VOLUME = "SFX";
 
+    // PlayerPrefs keys shared with SettingsManager
+    public const string MASTER_VOLUME_KEY = "MasterVolume";
+    public const string MUSIC_VOLUME_KEY = "MusicVolume";
+    public const string SFX_VOLUME_KEY = "SFXVolume";
+
     private void Awake()
     {
-        // Ensure that only one AudioManager exists
+        // Ensure only one AudioManager exists
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -54,7 +58,7 @@ public class AudioManager : MonoBehaviour
             return;
         }
 
-        // Find the audio mixer groups
+        // Find audio mixer groups
         AudioMixerGroup[] musicGroups =
             audioMixer.FindMatchingGroups(MUSIC_GROUP);
 
@@ -70,40 +74,85 @@ public class AudioManager : MonoBehaviour
         musicGroup = musicGroups[0];
         sfxGroup = sfxGroups[0];
 
-        // Start playing background music
+        // Load saved volumes before playing audio
+        LoadSavedVolumes();
+
+        // Start background music
         if (backgroundMusic != null)
         {
             PlayAudio(backgroundMusic, SoundType.Music, 0.5f, true);
         }
     }
 
-    // Convert linear volume values to decibels
-    private void SetVolume(string parameterName, float volumeLevel)
+    // Load saved volume levels, or use defaults
+    private void LoadSavedVolumes()
     {
-        volumeLevel = Mathf.Clamp(volumeLevel, 0.0001f, 1f);
+        SetVolume(
+            MASTER_VOLUME,
+            PlayerPrefs.GetFloat(MASTER_VOLUME_KEY, 1f)
+        );
 
-        float convertedVolumeLevel =
-            Mathf.Log10(volumeLevel) * 20f;
+        SetVolume(
+            MUSIC_VOLUME,
+            PlayerPrefs.GetFloat(MUSIC_VOLUME_KEY, 1f)
+        );
 
-        audioMixer.SetFloat(parameterName, convertedVolumeLevel);
+        SetVolume(
+            SFX_VOLUME,
+            PlayerPrefs.GetFloat(SFX_VOLUME_KEY, 1f)
+        );
     }
 
-    // Master volume control
+    // Convert linear volume to decibels
+    private void SetVolume(string parameterName, float volumeLevel)
+    {
+        if (audioMixer == null)
+            return;
+
+        volumeLevel = Mathf.Clamp(volumeLevel, 0.0001f, 1f);
+
+        float decibels = Mathf.Log10(volumeLevel) * 20f;
+
+        audioMixer.SetFloat(parameterName, decibels);
+    }
+
+    // Change and save master volume
     public void SetMasterVolume(float volumeLevel)
     {
         SetVolume(MASTER_VOLUME, volumeLevel);
+
+        PlayerPrefs.SetFloat(
+            MASTER_VOLUME_KEY,
+            Mathf.Clamp(volumeLevel, 0.0001f, 1f)
+        );
     }
 
-    // Music volume control
+    // Change and save music volume
     public void SetMusicVolume(float volumeLevel)
     {
         SetVolume(MUSIC_VOLUME, volumeLevel);
+
+        PlayerPrefs.SetFloat(
+            MUSIC_VOLUME_KEY,
+            Mathf.Clamp(volumeLevel, 0.0001f, 1f)
+        );
     }
 
-    // Sound effects volume control
+    // Change and save sound effects volume
     public void SetSFXVolume(float volumeLevel)
     {
         SetVolume(SFX_VOLUME, volumeLevel);
+
+        PlayerPrefs.SetFloat(
+            SFX_VOLUME_KEY,
+            Mathf.Clamp(volumeLevel, 0.0001f, 1f)
+        );
+    }
+
+    // Save preferences when closing the application
+    private void OnApplicationQuit()
+    {
+        PlayerPrefs.Save();
     }
 
     // Play an audio clip using the correct mixer group
@@ -119,19 +168,19 @@ public class AudioManager : MonoBehaviour
             return;
         }
 
-        // Create a new GameObject for the audio source
-        GameObject audioObject = new GameObject("Audio_" + clip.name);
+        GameObject audioObject =
+            new GameObject("Audio_" + clip.name);
+
         audioObject.transform.SetParent(transform);
 
-        // Add and configure AudioSource
-        AudioSource audioSource = audioObject.AddComponent<AudioSource>();
+        AudioSource audioSource =
+            audioObject.AddComponent<AudioSource>();
 
         audioSource.clip = clip;
         audioSource.volume = Mathf.Clamp01(volume);
         audioSource.loop = loop;
         audioSource.spatialBlend = 0f;
 
-        // Select the appropriate audio mixer group
         switch (soundType)
         {
             case SoundType.Music:
@@ -143,10 +192,8 @@ public class AudioManager : MonoBehaviour
                 break;
         }
 
-        // Play the sound
         audioSource.Play();
 
-        // Remove the audio object when a non-looping clip finishes
         if (!loop)
         {
             Destroy(audioObject, clip.length);

@@ -6,6 +6,7 @@ public class MainMenuManager : MonoBehaviour
     [Header("Menu Canvas Groups")]
     [SerializeField] private CanvasGroup mainMenuButtons;
     [SerializeField] private CanvasGroup quitConfirmation;
+    [SerializeField] private CanvasGroup settingsMenu;
 
     private CanvasGroup mainMenuCanvas;
 
@@ -14,7 +15,7 @@ public class MainMenuManager : MonoBehaviour
         // Get the Canvas Group attached to MainMenuCanvas
         mainMenuCanvas = GetComponent<CanvasGroup>();
 
-        // Show the main menu when the game launches
+        // Show only the main menu when the game launches
         OpenMainMenu();
     }
 
@@ -32,6 +33,7 @@ public class MainMenuManager : MonoBehaviour
         SetCanvasGroup(mainMenuCanvas, true);
         SetCanvasGroup(mainMenuButtons, true);
         SetCanvasGroup(quitConfirmation, false);
+        SetCanvasGroup(settingsMenu, false);
     }
 
     // Hide the entire main menu
@@ -51,6 +53,7 @@ public class MainMenuManager : MonoBehaviour
     public void OpenQuitConfirmation()
     {
         SetCanvasGroup(mainMenuButtons, false);
+        SetCanvasGroup(settingsMenu, false);
         SetCanvasGroup(quitConfirmation, true);
     }
 
@@ -58,6 +61,21 @@ public class MainMenuManager : MonoBehaviour
     public void CloseQuitConfirmation()
     {
         SetCanvasGroup(quitConfirmation, false);
+        SetCanvasGroup(mainMenuButtons, true);
+    }
+
+    // Open settings menu
+    public void OpenSettingsMenu()
+    {
+        SetCanvasGroup(mainMenuButtons, false);
+        SetCanvasGroup(quitConfirmation, false);
+        SetCanvasGroup(settingsMenu, true);
+    }
+
+    // Close settings menu
+    public void CloseSettingsMenu()
+    {
+        SetCanvasGroup(settingsMenu, false);
         SetCanvasGroup(mainMenuButtons, true);
     }
 
