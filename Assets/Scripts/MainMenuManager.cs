@@ -15,7 +15,7 @@ public class MainMenuManager : MonoBehaviour
         // Get the Canvas Group attached to MainMenuCanvas
         mainMenuCanvas = GetComponent<CanvasGroup>();
 
-        // Show only the main menu when the game launches
+        // Show the main menu when the game launches
         OpenMainMenu();
     }
 
@@ -49,7 +49,7 @@ public class MainMenuManager : MonoBehaviour
         GameManager.Instance.StartGame();
     }
 
-    // Open quit confirmation
+    // Open the quit confirmation menu
     public void OpenQuitConfirmation()
     {
         SetCanvasGroup(mainMenuButtons, false);
@@ -57,14 +57,14 @@ public class MainMenuManager : MonoBehaviour
         SetCanvasGroup(quitConfirmation, true);
     }
 
-    // Close quit confirmation
+    // Close the quit confirmation menu
     public void CloseQuitConfirmation()
     {
         SetCanvasGroup(quitConfirmation, false);
         SetCanvasGroup(mainMenuButtons, true);
     }
 
-    // Open settings menu
+    // Open the settings menu
     public void OpenSettingsMenu()
     {
         SetCanvasGroup(mainMenuButtons, false);
@@ -72,17 +72,24 @@ public class MainMenuManager : MonoBehaviour
         SetCanvasGroup(settingsMenu, true);
     }
 
-    // Close settings menu
+    // Close the settings menu
     public void CloseSettingsMenu()
     {
         SetCanvasGroup(settingsMenu, false);
         SetCanvasGroup(mainMenuButtons, true);
     }
 
-    // Quit the application
+    // Quit the game
     public void Quit()
     {
         Debug.Log("Quit button pressed!");
+
+#if UNITY_EDITOR
+        // Stop Play Mode inside Unity Editor
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        // Close the application in a built game
         Application.Quit();
+#endif
     }
 }

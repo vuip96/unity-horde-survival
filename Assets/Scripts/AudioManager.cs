@@ -1,4 +1,5 @@
 
+using System.Collections;
 using UnityEngine;
 using UnityEngine.Audio;
 
@@ -22,23 +23,23 @@ public class AudioManager : MonoBehaviour
     private AudioMixerGroup musicGroup;
     private AudioMixerGroup sfxGroup;
 
-    // Audio mixer group names
+    // Mixer group names
     private const string MUSIC_GROUP = "Music";
     private const string SFX_GROUP = "SFX";
 
-    // Exposed Audio Mixer parameters
+    // Exposed mixer parameters
     private const string MASTER_VOLUME = "Master";
     private const string MUSIC_VOLUME = "Music";
     private const string SFX_VOLUME = "SFX";
 
-    // PlayerPrefs keys shared with SettingsManager
+    // Saved preference keys
     public const string MASTER_VOLUME_KEY = "MasterVolume";
     public const string MUSIC_VOLUME_KEY = "MusicVolume";
     public const string SFX_VOLUME_KEY = "SFXVolume";
 
     private void Awake()
     {
-        // Ensure only one AudioManager exists
+        // Prevent duplicate AudioManager instances
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -47,7 +48,29 @@ public class AudioManager : MonoBehaviour
 
         Instance = this;
 
+        // Initialize audio mixer references
         Init();
+    }
+
+    private IEnumerator Start()
+    {
+        // Wait for the audio system and settings to initialize
+        yield return null;
+        yield return null;
+
+        // Restore volumes before starting background music
+        LoadSavedVolumes();
+
+        // Start music only after the saved settings are applied
+        if (backgroundMusic != null && audioMixer != null)
+        {
+            PlayAudio(
+                backgroundMusic,
+                SoundType.Music,
+                0.5f,
+                true
+            );
+        }
     }
 
     private void Init()
@@ -58,7 +81,6 @@ public class AudioManager : MonoBehaviour
             return;
         }
 
-        // Find audio mixer groups
         AudioMixerGroup[] musicGroups =
             audioMixer.FindMatchingGroups(MUSIC_GROUP);
 
@@ -73,18 +95,9 @@ public class AudioManager : MonoBehaviour
 
         musicGroup = musicGroups[0];
         sfxGroup = sfxGroups[0];
-
-        // Load saved volumes before playing audio
-        LoadSavedVolumes();
-
-        // Start background music
-        if (backgroundMusic != null)
-        {
-            PlayAudio(backgroundMusic, SoundType.Music, 0.5f, true);
-        }
     }
 
-    // Load saved volume levels, or use defaults
+    // Restore saved audio settings
     private void LoadSavedVolumes()
     {
         SetVolume(
@@ -103,7 +116,7 @@ public class AudioManager : MonoBehaviour
         );
     }
 
-    // Convert linear volume to decibels
+    // Convert linear volume values to decibels
     private void SetVolume(string parameterName, float volumeLevel)
     {
         if (audioMixer == null)
@@ -113,7 +126,12 @@ public class AudioManager : MonoBehaviour
 
         float decibels = Mathf.Log10(volumeLevel) * 20f;
 
-        audioMixer.SetFloat(parameterName, decibels);
+        if (!audioMixer.SetFloat(parameterName, decibels))
+        {
+            Debug.LogWarning(
+                "Could not set Audio Mixer parameter: " + parameterName
+            );
+        }
     }
 
     // Change and save master volume
@@ -149,13 +167,12 @@ public class AudioManager : MonoBehaviour
         );
     }
 
-    // Save preferences when closing the application
     private void OnApplicationQuit()
     {
         PlayerPrefs.Save();
     }
 
-    // Play an audio clip using the correct mixer group
+    // Play audio through the selected mixer group
     public void PlayAudio(
         AudioClip clip,
         SoundType soundType,

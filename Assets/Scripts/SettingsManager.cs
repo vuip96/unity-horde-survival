@@ -1,4 +1,5 @@
 
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,35 +10,41 @@ public class SettingsManager : MonoBehaviour
     [SerializeField] private Slider musicVolumeSlider;
     [SerializeField] private Slider sfxVolumeSlider;
 
-    private void Start()
+    private IEnumerator Start()
     {
-        // Restore slider positions from saved preferences
+        // Load saved volume preferences
+        float masterVolume = PlayerPrefs.GetFloat(
+            AudioManager.MASTER_VOLUME_KEY, 1f);
+
+        float musicVolume = PlayerPrefs.GetFloat(
+            AudioManager.MUSIC_VOLUME_KEY, 1f);
+
+        float sfxVolume = PlayerPrefs.GetFloat(
+            AudioManager.SFX_VOLUME_KEY, 1f);
+
+        // Restore slider positions without triggering events
         if (masterVolumeSlider != null)
-        {
-            masterVolumeSlider.SetValueWithoutNotify(
-                PlayerPrefs.GetFloat(
-                    AudioManager.MASTER_VOLUME_KEY, 1f
-                )
-            );
-        }
+            masterVolumeSlider.SetValueWithoutNotify(masterVolume);
 
         if (musicVolumeSlider != null)
-        {
-            musicVolumeSlider.SetValueWithoutNotify(
-                PlayerPrefs.GetFloat(
-                    AudioManager.MUSIC_VOLUME_KEY, 1f
-                )
-            );
-        }
+            musicVolumeSlider.SetValueWithoutNotify(musicVolume);
 
         if (sfxVolumeSlider != null)
+            sfxVolumeSlider.SetValueWithoutNotify(sfxVolume);
+
+        // Wait one frame for audio initialization
+        yield return null;
+
+        if (AudioManager.Instance == null)
         {
-            sfxVolumeSlider.SetValueWithoutNotify(
-                PlayerPrefs.GetFloat(
-                    AudioManager.SFX_VOLUME_KEY, 1f
-                )
-            );
+            Debug.LogWarning("AudioManager instance is missing!");
+            yield break;
         }
+
+        // Explicitly restore the actual AudioMixer volumes
+        AudioManager.Instance.SetMasterVolume(masterVolume);
+        AudioManager.Instance.SetMusicVolume(musicVolume);
+        AudioManager.Instance.SetSFXVolume(sfxVolume);
     }
 
     // Change master volume
